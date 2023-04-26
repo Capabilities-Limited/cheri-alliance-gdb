@@ -310,7 +310,7 @@ typedef __intcap_t gl_intptr_t;
 typedef __uintcap_t gl_uintptr_t;
 #else
 # if !((defined __KLIBC__ && defined _INTPTR_T_DECLARED) \
-       || defined __MINGW32__)
+       || defined __MINGW32__ || defined __CHERI_PURE_CAPABILITY__)
 #  undef intptr_t
 #  undef uintptr_t
 #  ifdef _WIN64
