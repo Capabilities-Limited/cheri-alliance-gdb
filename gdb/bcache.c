@@ -25,6 +25,15 @@
 
 #ifdef __CHERI_PURE_CAPABILITY__
 #include "cheriintrin.h"
+/*
+ * NB: Unlike CheriBSD's headers, cheriintrin.h currently has no good feature
+ * detection macros for these naming differences.
+ */
+#if defined(__riscv_y) || defined(__riscv_zcheripurecap)
+#define GDB_CHERI_PERMS_RO_CLEAR CHERI_PERM_WRITE
+#else
+#define GDB_CHERI_PERMS_RO_CLEAR (CHERI_PERM_STORE | CHERI_PERM_STORE_CAP)
+#endif
 #else
 #define cheri_bounds_set(p, l) (p)
 #define cheri_perms_clear(p, m) (p)
@@ -190,7 +199,7 @@ bcache::insert (const void *addr, int length, bool *added)
 	  if (s->length == length
 	      && this->compare (&s->d.data, addr, length))
 	    return cheri_perms_clear (cheri_bounds_set (&s->d.data, length),
-				      CHERI_PERM_STORE | CHERI_PERM_STORE_CAP);
+				      GDB_CHERI_PERMS_RO_CLEAR);
 	  else
 	    m_half_hash_miss_count++;
 	}
@@ -216,7 +225,7 @@ bcache::insert (const void *addr, int length, bool *added)
       *added = true;
 
     return cheri_perms_clear (cheri_bounds_set (&newobj->d.data, length),
-			      CHERI_PERM_STORE | CHERI_PERM_STORE_CAP);
+			      GDB_CHERI_PERMS_RO_CLEAR);
   }
 }
 
