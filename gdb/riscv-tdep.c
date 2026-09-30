@@ -923,6 +923,15 @@ riscv_abi_clen (struct gdbarch *gdbarch)
   return tdep->abi_features.clen;
 }
 
+/* See riscv-tdep.h.  */
+
+bool
+riscv_isa_y (struct gdbarch *gdbarch)
+{
+  riscv_gdbarch_tdep *tdep = gdbarch_tdep<riscv_gdbarch_tdep> (gdbarch);
+  return tdep->isa_features.y;
+}
+
 /* Return true if the target for GDBARCH has floating point hardware.  */
 
 static bool
@@ -4049,7 +4058,10 @@ riscv_features_from_bfd (const bfd *abfd)
       else if (e_flags & EF_RISCV_FLOAT_ABI_SINGLE)
 	features.flen = 4;
 
-      if (e_flags & EF_RISCV_CHERIABI)
+      if (e_flags & EF_RISCV_RVY)
+	features.y = true;
+
+      if ((e_flags & EF_RISCV_CHERIABI) || features.y)
 	features.clen = features.xlen * 2;
 
       if (e_flags & EF_RISCV_RVE)
@@ -4392,6 +4404,7 @@ riscv_cheri_print_cap (struct gdbarch *gdbarch, const gdb_byte *contents,
 {
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   int xlen = riscv_isa_xlen (gdbarch);
+  bool y = riscv_isa_y (gdbarch);
 
   ULONGEST pesbt = extract_unsigned_integer (contents + xlen, xlen, byte_order);
   ULONGEST address = extract_unsigned_integer (contents, xlen, byte_order);
@@ -4402,10 +4415,22 @@ riscv_cheri_print_cap (struct gdbarch *gdbarch, const gdb_byte *contents,
       return;
     }
 
-  if (xlen == 8)
+  if (xlen == 8 && y)
     {
       cc128r_cap_t cap;
       cc128r_decompress_mem(pesbt, address, tag, &cap);
+      if (compact)
+	{
+	  gdb_printf (stream, "%s", paddress (gdbarch, address));
+	  riscv_cheri_print_compact_attributes (gdbarch, &cap, stream);
+	}
+      else
+	riscv_cheri_print_verbose_attributes (gdbarch, &cap, stream);
+    }
+  else if (xlen == 8)
+    {
+      cc128r093_cap_t cap;
+      cc128r093_decompress_mem(pesbt, address, tag, &cap);
       if (compact)
 	{
 	  gdb_printf (stream, "%s", paddress (gdbarch, address));
@@ -4437,6 +4462,7 @@ riscv_cheri_print_cap_attributes (struct gdbarch *gdbarch,
 {
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   int xlen = riscv_isa_xlen (gdbarch);
+  bool y = riscv_isa_y (gdbarch);
 
   ULONGEST pesbt = extract_unsigned_integer (contents + xlen, xlen, byte_order);
   if (pesbt == 0 && !tag)
@@ -4447,6 +4473,12 @@ riscv_cheri_print_cap_attributes (struct gdbarch *gdbarch,
     {
       cc128r_cap_t cap;
       cc128r_decompress_mem(pesbt, address, tag, &cap);
+      riscv_cheri_print_compact_attributes (gdbarch, &cap, stream);
+    }
+  else if (xlen == 8)
+    {
+      cc128r093_cap_t cap;
+      cc128r093_decompress_mem(pesbt, address, tag, &cap);
       riscv_cheri_print_compact_attributes (gdbarch, &cap, stream);
     }
   else
@@ -4465,6 +4497,7 @@ riscv_cheriabi_write_pc (struct regcache *regcache, CORE_ADDR pc)
   gdbarch *gdbarch = regcache->arch ();
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   int xlen = riscv_isa_xlen (gdbarch);
+  bool y = riscv_isa_y (gdbarch);
   gdb_byte buf[xlen * 2];
   bool tag;
 
@@ -4479,11 +4512,17 @@ riscv_cheriabi_write_pc (struct regcache *regcache, CORE_ADDR pc)
   if (tag)
     {
       ULONGEST pesbt = extract_unsigned_integer (buf + xlen, xlen, byte_order);
-      if (xlen == 8)
+      if (xlen == 8 && y)
 	{
 	  cc128r_cap_t cap;
 	  cc128r_decompress_mem(pesbt, address, tag, &cap);
 	  tag = cc128r_is_representable_with_addr(&cap, pc, false);
+	}
+      else if (xlen == 8)
+	{
+	  cc128r093_cap_t cap;
+	  cc128r093_decompress_mem(pesbt, address, tag, &cap);
+	  tag = cc128r093_is_representable_with_addr(&cap, pc, false);
 	}
       else
 	{
@@ -4510,6 +4549,7 @@ riscv_gcc_target_options (struct gdbarch *gdbarch)
   int isa_xlen = riscv_isa_xlen (gdbarch);
   int isa_flen = riscv_isa_flen (gdbarch);
   int isa_clen = riscv_isa_clen (gdbarch);
+  bool isa_y = riscv_isa_y (gdbarch);
   int abi_xlen = riscv_abi_xlen (gdbarch);
   int abi_flen = riscv_abi_flen (gdbarch);
   int abi_clen = riscv_abi_clen (gdbarch);
@@ -4520,13 +4560,25 @@ riscv_gcc_target_options (struct gdbarch *gdbarch)
     target_options += "64";
   else
     target_options += "32";
-  if (isa_flen == 8)
-    target_options += "gc";
-  else if (isa_flen == 4)
-    target_options += "imafc";
+  if (isa_y)
+    {
+      target_options += "yma";
+      if (isa_flen == 4 || isa_flen == 8)
+	target_options += "f";
+      if (isa_flen == 8)
+	target_options += "d";
+      target_options += "c";
+    }
   else
-    target_options += "imac";
-  if (isa_clen != 0)
+    {
+      if (isa_flen == 8)
+	target_options += "gc";
+      else if (isa_flen == 4)
+	target_options += "imafc";
+      else
+	target_options += "imac";
+    }
+  if (isa_clen != 0 && !isa_y)
     {
       target_options += "zcherihybrid";
       target_options += "zcheripurecap";
@@ -4731,6 +4783,9 @@ riscv_gdbarch_init (struct gdbarch_info info,
      hardware features as defining the abi.  */
   if (abi_features.xlen == 0)
     abi_features = features;
+
+  if (abi_features.y)
+    features.y = true;
 
   /* In theory a binary compiled for RV32 could run on an RV64 target,
      however, this has not been tested in GDB yet, so for now we require
