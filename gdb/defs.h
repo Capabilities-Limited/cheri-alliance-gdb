@@ -625,6 +625,12 @@ enum user_selected_what_flag
   };
 DEF_ENUM_FLAGS_TYPE (enum user_selected_what_flag, user_selected_what);
 
+/* System headers provide uintcap_t only when hybrid support exists */
+#if defined(__CHERI__) && !defined(_UINTCAP_T_DECLARED)
+#define _UINTCAP_T_DECLARED
+typedef __uintcap_t uintcap_t;
+#endif
+
 #include "utils.h"
 
 #endif /* #ifndef DEFS_H */
