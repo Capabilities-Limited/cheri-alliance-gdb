@@ -251,8 +251,6 @@ static inline unsigned int riscv_insn_length (insn_t insn)
 #define OP_SH_SHAMT		20
 #define OP_MASK_SHAMTW		0x1f
 #define OP_SH_SHAMTW		20
-#define OP_MASK_SHAMTY		0x7f
-#define OP_SH_SHAMTY		20
 #define OP_MASK_RM		0x7
 #define OP_SH_RM		12
 #define OP_MASK_PRED		0xf

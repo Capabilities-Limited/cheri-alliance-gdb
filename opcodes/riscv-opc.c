@@ -171,8 +171,6 @@ const float riscv_fli_numval[32] =
 #define MATCH_SHAMT_BREV8 (0b00111 << OP_SH_SHAMT)
 #define MATCH_SHAMT_ZIP_32 (0b1111 << OP_SH_SHAMT)
 #define MATCH_SHAMT_ORC_B (0b00111 << OP_SH_SHAMT)
-#define MATCH_SHAMTY_YHIR_32 (0b100000 << OP_SH_SHAMTY)
-#define MATCH_SHAMTY_YHIR_64 (0b1000000 << OP_SH_SHAMTY)
 #define MASK_VD (OP_MASK_VD << OP_SH_VD)
 #define MASK_VS1 (OP_MASK_VS1 << OP_SH_VS1)
 #define MASK_VS2 (OP_MASK_VS2 << OP_SH_VS2)
@@ -2212,27 +2210,24 @@ const struct riscv_opcode riscv_opcodes[] =
 {"vt.maskcn",  64, INSN_CLASS_XVENTANACONDOPS, "d,s,t", MATCH_VT_MASKCN, MASK_VT_MASKCN, match_opcode, 0 },
 
 /* Y instructions.  */
-{ "ly",      32, INSN_CLASS_Y, "WCd,o(s)",  MATCH_LY,     MASK_LY,     match_opcode, INSN_DREF|INSN_8_BYTE },
-{ "ly",      64, INSN_CLASS_Y, "WCd,o(s)",  MATCH_LY,     MASK_LY,     match_opcode, INSN_DREF|INSN_16_BYTE },
-{ "sy",      32, INSN_CLASS_Y, "WCt,o(s)",  MATCH_SY,     MASK_SY,     match_opcode, INSN_DREF|INSN_8_BYTE },
-{ "sy",      64, INSN_CLASS_Y, "WCt,o(s)",  MATCH_SY,     MASK_SY,     match_opcode, INSN_DREF|INSN_16_BYTE },
-{ "yadd",     0, INSN_CLASS_Y, "WCd,WCs,t", MATCH_YADD,   MASK_YADD,   match_rs2_nonzero, 0 },
-{ "yaddi",    0, INSN_CLASS_Y, "WCd,WCs,j", MATCH_YADDI,  MASK_YADDI,  match_opcode, 0 },
-{ "yaddrw",   0, INSN_CLASS_Y, "WCd,WCs,t", MATCH_YADDRW, MASK_YADDRW, match_opcode, 0 },
-{ "ytagr",    0, INSN_CLASS_Y, "d,WCs",     MATCH_YTAGR,  MASK_YTAGR,  match_opcode, 0 },
-{ "ypermr",   0, INSN_CLASS_Y, "d,WCs",     MATCH_YPERMR, MASK_YPERMR, match_opcode, 0 },
-{ "ymv",      0, INSN_CLASS_Y, "WCd,WCs",   MATCH_YMV,    MASK_YMV,    match_opcode, 0 },
-{ "ypermc",   0, INSN_CLASS_Y, "WCd,WCs,t", MATCH_YPERMC, MASK_YPERMC, match_opcode, 0 },
-
-{ "yhir",    32, INSN_CLASS_Y, "d,WCs", MATCH_SRLIY|MATCH_SHAMTY_YHIR_32, MASK_SRLIY, match_opcode, 0 },
-{ "yhir",    64, INSN_CLASS_Y, "d,WCs", MATCH_SRLIY|MATCH_SHAMTY_YHIR_64, MASK_SRLIY, match_opcode, 0 },
-
+{ "ly",      32, INSN_CLASS_Y, "WCd,o(s)",    MATCH_LY,       MASK_LY,       match_opcode, INSN_DREF|INSN_8_BYTE },
+{ "ly",      64, INSN_CLASS_Y, "WCd,o(s)",    MATCH_LY,       MASK_LY,       match_opcode, INSN_DREF|INSN_16_BYTE },
+{ "sy",      32, INSN_CLASS_Y, "WCt,o(s)",    MATCH_SY,       MASK_SY,       match_opcode, INSN_DREF|INSN_8_BYTE },
+{ "sy",      64, INSN_CLASS_Y, "WCt,o(s)",    MATCH_SY,       MASK_SY,       match_opcode, INSN_DREF|INSN_16_BYTE },
+{ "yadd",     0, INSN_CLASS_Y, "WCd,WCs,t",   MATCH_YADD,     MASK_YADD,     match_rs2_nonzero, 0 },
+{ "yaddi",    0, INSN_CLASS_Y, "WCd,WCs,j",   MATCH_YADDI,    MASK_YADDI,    match_opcode, 0 },
+{ "yaddrw",   0, INSN_CLASS_Y, "WCd,WCs,t",   MATCH_YADDRW,   MASK_YADDRW,   match_opcode, 0 },
+{ "ytagr",    0, INSN_CLASS_Y, "d,WCs",       MATCH_YTAGR,    MASK_YTAGR,    match_opcode, 0 },
+{ "ypermr",   0, INSN_CLASS_Y, "d,WCs",       MATCH_YPERMR,   MASK_YPERMR,   match_opcode, 0 },
+{ "ymv",      0, INSN_CLASS_Y, "WCd,WCs",     MATCH_YMV,      MASK_YMV,      match_opcode, 0 },
+{ "ypermc",   0, INSN_CLASS_Y, "WCd,WCs,t",   MATCH_YPERMC,   MASK_YPERMC,   match_opcode, 0 },
+{ "yhir",     0, INSN_CLASS_Y, "d,WCs",       MATCH_YHIR,     MASK_YHIR,     match_opcode, 0 },
 { "yhiw",     0, INSN_CLASS_Y, "WCd,WCs,t",   MATCH_YHIW,     MASK_YHIW,     match_opcode, 0 },
 { "yeq",      0, INSN_CLASS_Y, "d,WCs,WCt",   MATCH_YEQ,      MASK_YEQ,      match_opcode, 0 },
 { "yss",      0, INSN_CLASS_Y, "d,WCs,WCt",   MATCH_YSS,      MASK_YSS,      match_opcode, 0 },
 { "ybld",     0, INSN_CLASS_Y, "WCd,WCs,WCt", MATCH_YBLD,     MASK_YBLD,     match_opcode, 0 },
-{ "ysentry",  0, INSN_CLASS_Y, "WCd,WCt",     MATCH_YSENTRY,  MASK_YSENTRY,  match_opcode, 0 },
-{ "ysunseal", 0, INSN_CLASS_Y, "WCd,WCs,WCt", MATCH_YSUNSEAL, MASK_YSUNSEAL, match_opcode, 0 },
+{ "yseale",   0, INSN_CLASS_Y, "WCd,WCt",     MATCH_YSEALE,   MASK_YSEALE,  match_opcode, 0 },
+{ "yunseals", 0, INSN_CLASS_Y, "WCd,WCs,WCt", MATCH_YUNSEALS, MASK_YUNSEALS, match_opcode, 0 },
 { "ybndsw",   0, INSN_CLASS_Y, "WCd,WCs,t",   MATCH_YBNDSW,   MASK_YBNDSW,   match_opcode, 0 },
 { "ybndswi",  0, INSN_CLASS_Y, "WCd,WCs,WCB", MATCH_YBNDSWI,  MASK_YBNDSWI,  match_opcode, 0 },
 { "ybndsrw",  0, INSN_CLASS_Y, "WCd,WCs,t",   MATCH_YBNDSRW,  MASK_YBNDSRW,  match_opcode, 0 },

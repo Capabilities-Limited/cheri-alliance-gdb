@@ -588,14 +588,27 @@ print_insn_args (const char *oparg, insn_t l, bfd_vma pc, disassemble_info *info
 #undef DECLARE_CSR_ALIAS
 	      }
 
-		if (capmode) {
-		    switch (csr)
+		if (capmode)
+		  {
+		    if (riscv_subset_supports (&riscv_rps_dis, "y"))
 		      {
-#define DECLARE_CSR_CHERI(name, num) case num: capmode_csr_name = #name; break;
+			switch (csr)
+			  {
+#define DECLARE_CSR_Y(name, num) case num: capmode_csr_name = #name; break;
 #include "opcode/riscv-opc.h"
-#undef DECLARE_CSR_CHERI
+#undef DECLARE_CSR_Y
+			  }
 		      }
-		}
+		    else
+		      {
+			switch (csr)
+			  {
+#define DECLARE_CSR_ZCHERI(name, num) case num: capmode_csr_name = #name; break;
+#include "opcode/riscv-opc.h"
+#undef DECLARE_CSR_ZCHERI
+			  }
+		      }
+		  }
 
 		if (capmode_csr_name)
 		  print (info->stream, dis_style_register, "%s", capmode_csr_name);
